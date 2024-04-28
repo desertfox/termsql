@@ -1,0 +1,8 @@
+---
+- name: luke skywalker
+  query: |-
+    select name, age_during_role, year_born 
+    from actors where
+    movie_character='luke skywalker'
+  server_group: server1
+  server_position: 0
