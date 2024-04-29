@@ -1,6 +1,0 @@
----
-- name: test1
-  query: |-
-    select count(1) as count from test_table
-  server_group: home_server
-  server_position: 0

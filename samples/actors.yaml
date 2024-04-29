@@ -1,0 +1,14 @@
+- name: luke skywalker
+  query: "select name, age_during_role, year_born \nfrom actors where\nmovie_character='luke
+    skywalker'"
+  server_group: server1
+  server_position: 0
+- name: darth vader
+  query: "select name, age_during_role, year_born \nfrom actors where\nmovie_character='darth
+    vader'"
+  server_group: server1
+  server_position: 0
+- name: a
+  query: b
+  server_group: server2
+  server_position: 0

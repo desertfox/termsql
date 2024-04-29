@@ -1,0 +1,16 @@
+---
+- name: test1
+  query: |-
+    select count(1) as count from test_table
+  server_group: server1
+  server_position: 0
+- name: test2
+  query: |-
+    select * from test_table
+  server_group: server1
+  server_position: 0
+- name: test3
+  query: |-
+    select * from test_table where id = ? limit ?
+  server_group: server1
+  server_position: 0
