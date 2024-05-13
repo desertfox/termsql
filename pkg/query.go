@@ -68,7 +68,7 @@ func (x QueryMap) FindQuery(group, queryName string) (Query, error) {
 
 func (x QueryMap) FindQueryGroup(group string) ([]Query, error) {
 	if _, ok := x[group]; !ok {
-		return []Query{}, fmt.Errorf("group %s not found", group)
+		return []Query{}, fmt.Errorf("query group %s not found, groups:%v", group, x.Keys())
 	}
 
 	return x[group], nil
@@ -115,4 +115,12 @@ func (x Query) Run(db *sql.DB, params ...string) (map[string]string, error) {
 	}
 
 	return results, nil
+}
+
+func (x QueryMap) Keys() []string {
+	keys := make([]string, 0, len(x))
+	for k := range x {
+		keys = append(keys, k)
+	}
+	return keys
 }

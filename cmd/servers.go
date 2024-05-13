@@ -50,12 +50,15 @@ var (
 				return
 			}
 
-			serverOptions := make([]huh.Option[string], 0)
+			var (
+				serverOptions []huh.Option[string] = make([]huh.Option[string], 0)
+				serverGroup   string
+			)
+
 			for server := range serverList {
 				serverOptions = append(serverOptions, huh.NewOption(server, server))
 			}
 
-			var serverGroup string
 			huh.NewSelect[string]().
 				Title("Select server group").
 				Options(serverOptions...).

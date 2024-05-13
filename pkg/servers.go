@@ -67,7 +67,7 @@ func LoadServerList(p string) (ServerList, error) {
 
 func (x ServerList) FindServer(searchGroup string, position int) (Server, error) {
 	if _, ok := x[searchGroup]; !ok {
-		return Server{}, fmt.Errorf("group %s not found %v", searchGroup, x)
+		return Server{}, fmt.Errorf("server group \"%s\" not found, groups:%v", searchGroup, x.Keys())
 	}
 
 	return x[searchGroup].Servers[0], nil
@@ -96,4 +96,12 @@ func (s Server) ToTable() string {
 	}
 
 	return result.String()
+}
+
+func (x ServerList) Keys() []string {
+	keys := make([]string, 0, len(x))
+	for k := range x {
+		keys = append(keys, k)
+	}
+	return keys
 }
