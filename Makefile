@@ -16,3 +16,6 @@ kill:
 
 logs:
 	docker logs $(CONTAINER_NAME)
+
+build_bin:
+	CGO_ENABLED=0 go build -ldflags="-s -w"
