@@ -26,12 +26,12 @@ var (
 			if tsqlGroup == "" {
 				for group := range serverList {
 					for i, s := range serverList[group].Servers {
-						fmt.Println(ui.BASE_STYLE.Render(fmt.Sprintf("Group   : %s\nPosition: %d\n", group, i) + ui.ToTable(s)))
+						fmt.Println(ui.BASE_STYLE.Render(fmt.Sprintf("Group: %s,Position: %d\n", group, i) + ui.ToTwoLineString(s)))
 					}
 				}
 			} else {
 				for i, s := range serverList[tsqlGroup].Servers {
-					fmt.Println(ui.BASE_STYLE.Render(fmt.Sprintf("Group: %s\nPosition: %d\n", tsqlGroup, i) + ui.ToTable(s)))
+					fmt.Println(ui.BASE_STYLE.Render(fmt.Sprintf("Group: %s,Position: %d\n", tsqlGroup, i) + ui.ToTwoLineString(s)))
 				}
 			}
 		},
@@ -95,7 +95,7 @@ var (
 				return
 			}
 
-			fmt.Println(ui.BASE_STYLE.Render(ui.ToTable(result)))
+			fmt.Println(ui.BASE_STYLE.Render(ui.ToTwoLineString(result)))
 		},
 	}
 )

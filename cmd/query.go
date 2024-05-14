@@ -36,7 +36,7 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 			for group, queries := range qm {
 				fmt.Println(ui.BASE_STYLE.Render("group: " + group))
 				for _, query := range queries {
-					fmt.Println(ui.BASE_STYLE.Render(query.String()))
+					fmt.Println(ui.BASE_STYLE.Render(ui.ToTwoLineString(query)))
 				}
 			}
 		},
@@ -151,7 +151,7 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 				return
 			}
 
-			fmt.Println(ui.BASE_STYLE.Render(ui.ToTable(results)))
+			fmt.Println(ui.BASE_STYLE.Render(ui.ToTwoLineString(results)))
 		},
 	}
 	loadQueryCmd = &cobra.Command{
@@ -179,7 +179,7 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 				return
 			}
 
-			fmt.Println(ui.BASE_STYLE.Render(ui.ToTable(results)))
+			fmt.Println(ui.BASE_STYLE.Render(ui.ToTwoLineString(results)))
 		},
 	}
 	saveQueryCmd = &cobra.Command{
