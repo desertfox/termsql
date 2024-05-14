@@ -6,13 +6,13 @@ import (
 	"path/filepath"
 
 	termsql "github.com/desertfox/termsql/pkg"
-	"github.com/desertfox/termsql/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
 var (
 	termSQLDirectory   string
 	termSQLServersFile string
+	config             termsql.Config
 	rootCmd            = &cobra.Command{
 		Use:   "termsql",
 		Short: "termsql is a command line tool for interacting with SQL Server",
@@ -33,17 +33,13 @@ func init() {
 
 	rootCmd.AddCommand(serversCmd)
 	rootCmd.AddCommand(queryCmd)
+
+	config = termsql.Config{
+		Directory:   termSQLDirectory,
+		ServersFile: termSQLServersFile,
+	}
 }
 
 func Execute() {
 	rootCmd.Execute()
-}
-
-func GetQueryMap() termsql.QueryMap {
-	qm, err := termsql.LoadQueryMapDirectory(termSQLDirectory, termSQLServersFile)
-	if err != nil {
-		fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
-		panic("")
-	}
-	return qm
 }

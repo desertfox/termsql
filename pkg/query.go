@@ -129,3 +129,12 @@ func (x QueryMap) Keys() []string {
 	}
 	return keys
 }
+
+func LoadQueryMap(c Config) (QueryMap, error) {
+	qm, err := LoadQueryMapDirectory(c.Directory, c.ServersFile)
+	if err != nil {
+		return nil, fmt.Errorf("error loading query map: %s", err)
+	}
+
+	return qm, nil
+}

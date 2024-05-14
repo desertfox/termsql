@@ -43,7 +43,7 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 			}
 
 			huh.NewSelect[string]().
-				Title("Pick sql group.").
+				Title(ui.BASE_STYLE.Render("Select sql group")).
 				Options(
 					options...,
 				).
@@ -55,7 +55,7 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 			}
 
 			huh.NewSelect[string]().
-				Title("Pick sql query.").
+				Title(ui.BASE_STYLE.Render("Pick sql query.")).
 				Options(
 					options...,
 				).
@@ -67,10 +67,7 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 				return
 			}
 
-			results, err := termsql.RunQuery(termsql.Config{
-				Directory:   termSQLDirectory,
-				ServersFile: termSQLServersFile,
-			}, q)
+			results, err := termsql.RunQuery(config, q)
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
 				return
@@ -85,10 +82,6 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 		Short:   "Create a query",
 		Long:    `Create a query`,
 		Run: func(cmd *cobra.Command, args []string) {
-			config := termsql.Config{
-				Directory:   termSQLDirectory,
-				ServersFile: termSQLServersFile,
-			}
 			serverList, err := termsql.LoadServerList(config)
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
@@ -100,7 +93,8 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 				serverOptions = append(serverOptions, huh.NewOption(server, server))
 			}
 
-			var q termsql.Query
+			q := termsql.Query{}
+
 			huh.NewSelect[string]().
 				Title("Select server group").
 				Options(serverOptions...).
@@ -180,10 +174,7 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			results, err := termsql.RunQuery(
-				termsql.Config{
-					Directory:   termSQLDirectory,
-					ServersFile: termSQLServersFile,
-				},
+				config,
 				termsql.Query{
 					Query:         args[0],
 					DatabaseGroup: serverGroup,
@@ -205,7 +196,11 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 		Args:    cobra.ExactArgs(2),
 		Aliases: []string{"s"},
 		Run: func(cmd *cobra.Command, args []string) {
-			qm := GetQueryMap()
+			qm, err := termsql.LoadQueryMap(config)
+			if err != nil {
+				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
+				return
+			}
 
 			q, err := qm.FindQuery(args[0], args[1])
 			if err != nil {
@@ -213,20 +208,13 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 				return
 			}
 
-			results, err := termsql.RunQuery(
-				termsql.Config{
-					Directory:   termSQLDirectory,
-					ServersFile: termSQLServersFile,
-				},
-				q,
-			)
+			results, err := termsql.RunQuery(config, q)
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
 				return
 			}
 
 			fmt.Println(ui.BASE_STYLE.Render(ui.ToTable(results)))
-
 		},
 	}
 )

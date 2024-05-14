@@ -17,10 +17,7 @@ var (
 		Long:    `List all registered servers`,
 		Aliases: []string{"s"},
 		Run: func(cmd *cobra.Command, args []string) {
-			serverList, err := termsql.LoadServerList(termsql.Config{
-				Directory:   termSQLDirectory,
-				ServersFile: termSQLServersFile,
-			})
+			serverList, err := termsql.LoadServerList(config)
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
 				return
@@ -50,10 +47,7 @@ var (
 				serverGroup   string
 			)
 
-			serverList, err := termsql.LoadServerList(termsql.Config{
-				Directory:   termSQLDirectory,
-				ServersFile: termSQLServersFile,
-			})
+			serverList, err := termsql.LoadServerList(config)
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
 				return
