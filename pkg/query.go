@@ -129,3 +129,7 @@ func (x QueryMap) Keys() []string {
 	}
 	return keys
 }
+
+func (x Query) String() string {
+	return fmt.Sprintf("Name: %s\nQuery: %s\nDatabaseGroup: %s\nDatabasePos: %d\n", x.Name, x.Query, x.DatabaseGroup, x.DatabasePos)
+}

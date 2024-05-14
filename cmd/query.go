@@ -32,48 +32,13 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 				return
 			}
 
-			var (
-				group string
-				query string
-			)
-
-			options := make([]huh.Option[string], 0)
-			for item := range qm {
-				options = append(options, huh.NewOption(item, item))
+			fmt.Println(ui.BASE_STYLE.Render("Available queries:"))
+			for group, queries := range qm {
+				fmt.Println(ui.BASE_STYLE.Render("group: " + group))
+				for _, query := range queries {
+					fmt.Println(ui.BASE_STYLE.Render(query.String()))
+				}
 			}
-
-			huh.NewSelect[string]().
-				Title(ui.BASE_STYLE.Render("Select sql group")).
-				Options(
-					options...,
-				).
-				Value(&group).Run()
-
-			options = make([]huh.Option[string], 0)
-			for _, q := range qm[group] {
-				options = append(options, huh.NewOption(q.Name, q.Name))
-			}
-
-			huh.NewSelect[string]().
-				Title(ui.BASE_STYLE.Render("Pick sql query.")).
-				Options(
-					options...,
-				).
-				Value(&query).Run()
-
-			q, err := qm.FindQuery(group, query)
-			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
-				return
-			}
-
-			results, err := termsql.RunQuery(config, q)
-			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
-				return
-			}
-
-			fmt.Println(ui.BASE_STYLE.Render(ui.ToTable(results)))
 		},
 	}
 	queryCreateCmd = &cobra.Command{
@@ -189,12 +154,12 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 			fmt.Println(ui.BASE_STYLE.Render(ui.ToTable(results)))
 		},
 	}
-	savedQueryCmd = &cobra.Command{
-		Use:     "saved",
+	loadQueryCmd = &cobra.Command{
+		Use:     "load",
 		Short:   "Run a saved query",
 		Long:    `Run a saved query`,
 		Args:    cobra.ExactArgs(2),
-		Aliases: []string{"s"},
+		Aliases: []string{"l"},
 		Run: func(cmd *cobra.Command, args []string) {
 			qm, err := termsql.LoadQueryMapDirectory(config)
 			if err != nil {
@@ -217,6 +182,96 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 			fmt.Println(ui.BASE_STYLE.Render(ui.ToTable(results)))
 		},
 	}
+	saveQueryCmd = &cobra.Command{
+		Use:     "save",
+		Aliases: []string{"s"},
+		Short:   "Save a query",
+		Long:    `Save a query`,
+		Run: func(cmd *cobra.Command, args []string) {
+			serverList, err := termsql.LoadServerList(config)
+			if err != nil {
+				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
+				return
+			}
+
+			serverOptions := make([]huh.Option[string], 0)
+			for server := range serverList {
+				serverOptions = append(serverOptions, huh.NewOption(server, server))
+			}
+
+			q := termsql.Query{}
+
+			huh.NewSelect[string]().
+				Title("Select server group").
+				Options(serverOptions...).
+				Value(&q.DatabaseGroup).Run()
+
+			optionsInt := make([]huh.Option[int], 0)
+			for pos, server := range serverList[q.DatabaseGroup].Servers {
+				optionsInt = append(optionsInt, huh.NewOption(server.Db, pos))
+			}
+
+			huh.NewSelect[int]().
+				Title("Select database").
+				Options(optionsInt...).
+				Value(&q.DatabasePos).Run()
+
+			qm, err := termsql.LoadQueryMapDirectory(config)
+			if err != nil {
+				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
+				return
+			}
+
+			groupOptions := make([]huh.Option[string], 0)
+			queryGroup := ""
+			for group := range qm {
+				groupOptions = append(groupOptions, huh.NewOption(group, group))
+			}
+			groupOptions = append(groupOptions, huh.NewOption("New group", "New group"))
+			huh.NewSelect[string]().
+				Title("Select query group").
+				Options(groupOptions...).
+				Value(&queryGroup).Run()
+
+			if queryGroup == "New group" {
+				queryGroup = ""
+				huh.NewInput().
+					Title("Enter query group").
+					Value(&queryGroup).Run()
+			}
+
+			huh.NewInput().
+				Title("Enter query alias").
+				Value(&q.Name).Run()
+
+			huh.NewInput().
+				Title("Enter query").
+				Value(&q.Query).Run()
+
+			qs, _ := qm.FindQueryGroup(queryGroup)
+			qs = append(qs, q)
+
+			filePath := filepath.Join(termSQLDirectory, queryGroup+".yaml")
+			file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+			if err != nil {
+				fmt.Println("Error opening file:", err)
+				return
+			}
+			defer file.Close()
+
+			data, err := yaml.Marshal(&qs)
+			if err != nil {
+				fmt.Println("Error marshaling to YAML:", err)
+				return
+			}
+			//write data to file
+			if _, err := file.Write(data); err != nil {
+				fmt.Println("Error writing to file:", err)
+				return
+			}
+
+		},
+	}
 )
 
 func init() {
@@ -228,5 +283,6 @@ func init() {
 
 	queryCmd.AddCommand(queryCreateCmd)
 	queryCmd.AddCommand(rawQueryCmd)
-	queryCmd.AddCommand(savedQueryCmd)
+	queryCmd.AddCommand(loadQueryCmd)
+	queryCmd.AddCommand(saveQueryCmd)
 }
