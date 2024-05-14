@@ -1,52 +1,69 @@
 package termsql
 
 import (
+	"fmt"
 	"os"
-	"strings"
 	"testing"
-
-	"gopkg.in/yaml.v2"
 )
 
 func TestLoadQueryMapDirectory(t *testing.T) {
-	dir, err := os.MkdirTemp("", "testdir")
+	validDir, err := os.MkdirTemp("", "valid")
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(dir)
+	defer os.RemoveAll(validDir)
 
-	file, err := os.CreateTemp(dir, "test*.yaml")
+	emptyDir, err := os.MkdirTemp("", "empty")
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(emptyDir)
+
+	testCases := []struct {
+		name           string
+		config         Config
+		expectError    bool
+		expectedErrMsg string
+	}{
+		{
+			name: "Valid Directory",
+			config: Config{
+				Directory: validDir,
+			},
+			expectError: false,
+		},
+		{
+			name: "Invalid Directory",
+			config: Config{
+				Directory: "invalidDirectory",
+			},
+			expectError:    true,
+			expectedErrMsg: "error reading directory: invalidDirectory",
+		},
+		{
+			name: "Empty Directory",
+			config: Config{
+				Directory: emptyDir,
+			},
+			expectError: false,
+		},
 	}
 
-	query := Query{
-		Name:          "test",
-		Query:         "SELECT * FROM test",
-		DatabaseGroup: "test",
-		DatabasePos:   0,
-	}
-
-	data, err := yaml.Marshal([]Query{query})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := file.Write(data); err != nil {
-		t.Fatal(err)
-	}
-	file.Close()
-
-	queryMap, err := LoadQueryMapDirectory(Config{Directory: dir, ServersFile: "serverfile.yaml"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	fileParts := strings.Split(file.Name(), ".")
-	pathParts := strings.Split(fileParts[0], "/")
-
-	if query != queryMap[pathParts[len(pathParts)-1]][query.DatabasePos] {
-		t.Errorf("expected %v, got %v", query, queryMap[file.Name()][query.DatabasePos])
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := LoadQueryMapDirectory(tc.config)
+			if tc.expectError {
+				if err == nil {
+					t.Errorf("Expected an error for directory '%s', got nil", tc.config.Directory)
+				} else if err.Error() != tc.expectedErrMsg {
+					t.Errorf("Expected error message to be '%s', got '%s'", tc.expectedErrMsg, err.Error())
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("Expected no error for directory '%s', got %v", tc.config.Directory, err)
+				}
+			}
+		})
 	}
 }
 
@@ -56,27 +73,62 @@ func TestFindQuery(t *testing.T) {
 			{
 				Name:          "testQuery",
 				Query:         "SELECT * FROM test",
-				DatabaseGroup: "testGroup",
+				DatabaseGroup: "testServerGroup",
 				DatabasePos:   0,
 			},
 		},
 	}
 
-	query, err := qm.FindQuery("testGroup", "testQuery")
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	if query.Name != "testQuery" {
-		t.Errorf("Expected query name to be 'testQuery', got '%s'", query.Name)
+	testCases := []struct {
+		name           string
+		groupName      string
+		queryName      string
+		expectError    bool
+		expected       Query
+		expectedErrMsg string
+	}{
+		{
+			name:      "Valid Query",
+			groupName: "testGroup",
+			queryName: "testQuery",
+			expected: Query{
+				Name:          "testQuery",
+				Query:         "SELECT * FROM test",
+				DatabaseGroup: "testServerGroup",
+				DatabasePos:   0,
+			},
+		},
+		{
+			name:           "Non-Existent Group",
+			groupName:      "nonExistentGroup",
+			queryName:      "testQuery",
+			expectError:    true,
+			expectedErrMsg: fmt.Sprintf("query group %s not found, groups:%v", "nonExistentGroup", []string{"testGroup"}),
+		},
+		{
+			name:           "Non-Existent Query",
+			groupName:      "testGroup",
+			queryName:      "nonExistentQuery",
+			expectError:    true,
+			expectedErrMsg: fmt.Sprintf("query %s not found in group:%s, available queries:%v", "nonExistentQuery", "testGroup", []string{"testQuery"}),
+		},
 	}
 
-	_, err = qm.FindQuery("nonExistentGroup", "testQuery")
-	if err == nil {
-		t.Fatalf("Expected an error, got nil")
-	}
-
-	_, err = qm.FindQuery("testGroup", "nonExistentQuery")
-	if err == nil {
-		t.Fatalf("Expected an error, got nil")
+	for _, tc := range testCases {
+		query, err := qm.FindQuery(tc.groupName, tc.queryName)
+		if tc.expectError {
+			if err == nil {
+				t.Errorf("Expected an error for group '%s' and query '%s', got nil", tc.groupName, tc.queryName)
+			} else if err.Error() != tc.expectedErrMsg {
+				t.Errorf("Expected error message to be '%s', got '%s'", tc.expectedErrMsg, err.Error())
+			}
+		} else {
+			if err != nil {
+				t.Fatalf("Expected no error for group '%s' and query '%s', got %v", tc.groupName, tc.queryName, err)
+			}
+			if query != tc.expected {
+				t.Errorf("Expected query to be '%v', got '%v'", tc.expected, query)
+			}
+		}
 	}
 }

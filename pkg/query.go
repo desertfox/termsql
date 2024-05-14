@@ -68,7 +68,7 @@ func (x QueryMap) FindQuery(group, queryName string) (Query, error) {
 		queryNames = append(queryNames, query.Name)
 	}
 
-	return Query{}, fmt.Errorf("query %s not found in group %s, available queries:%v", queryName, group, queryNames)
+	return Query{}, fmt.Errorf("query %s not found in group:%s, available queries:%v", queryName, group, queryNames)
 }
 
 func (x QueryMap) FindQueryGroup(group string) ([]Query, error) {
