@@ -19,16 +19,16 @@ type Query struct {
 	DatabasePos   int    `yaml:"server_position"`
 }
 
-func LoadQueryMapDirectory(p, serverList string) (QueryMap, error) {
-	files, err := os.ReadDir(p)
+func LoadQueryMapDirectory(c Config) (QueryMap, error) {
+	files, err := os.ReadDir(c.Directory)
 	if err != nil {
-		return nil, fmt.Errorf("error reading directory: %s", p)
+		return nil, fmt.Errorf("error reading directory: %s", c.Directory)
 	}
 
 	var QueryMaps QueryMap = make(QueryMap, 0)
 	for _, entry := range files {
-		if !entry.IsDir() && entry.Name() != serverList && filepath.Ext(entry.Name()) == ".yaml" {
-			filePath := filepath.Join(p, entry.Name())
+		if !entry.IsDir() && entry.Name() != c.ServersFile && filepath.Ext(entry.Name()) == ".yaml" {
+			filePath := filepath.Join(c.Directory, entry.Name())
 			data, err := os.ReadFile(filePath)
 			if err != nil {
 				fmt.Println("Error reading file:", filePath, err)
@@ -128,13 +128,4 @@ func (x QueryMap) Keys() []string {
 		keys = append(keys, k)
 	}
 	return keys
-}
-
-func LoadQueryMap(c Config) (QueryMap, error) {
-	qm, err := LoadQueryMapDirectory(c.Directory, c.ServersFile)
-	if err != nil {
-		return nil, fmt.Errorf("error loading query map: %s", err)
-	}
-
-	return qm, nil
 }

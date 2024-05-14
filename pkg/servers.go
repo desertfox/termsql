@@ -3,8 +3,6 @@ package termsql
 import (
 	"fmt"
 	"os"
-	"reflect"
-	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -78,31 +76,6 @@ func (x ServerList) FindServer(q Query) (Server, error) {
 	}
 
 	return x[q.DatabaseGroup].Servers[0], nil
-}
-
-func (s Server) ToTable() string {
-	var result strings.Builder
-
-	v := reflect.ValueOf(s)
-	t := v.Type()
-
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		name := t.Field(i).Name
-
-		switch field.Kind() {
-		case reflect.String:
-			if field.String() != "" {
-				result.WriteString(fmt.Sprintf("%s: %s\n", name, field.String()))
-			}
-		case reflect.Int:
-			if field.Int() != 0 {
-				result.WriteString(fmt.Sprintf("%s: %d\n", name, field.Int()))
-			}
-		}
-	}
-
-	return result.String()
 }
 
 func (x ServerList) Keys() []string {

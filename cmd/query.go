@@ -26,7 +26,7 @@ Saved query     : termsql query query_group query_name
 Raw query       : termsql q raw server_group server_pos "select * from table"`,
 		Aliases: []string{"q"},
 		Run: func(cmd *cobra.Command, args []string) {
-			qm, err := termsql.LoadQueryMapDirectory(termSQLDirectory, termSQLServersFile)
+			qm, err := termsql.LoadQueryMapDirectory(config)
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
 				return
@@ -110,7 +110,7 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 				Options(optionsInt...).
 				Value(&q.DatabasePos).Run()
 
-			qm, err := termsql.LoadQueryMapDirectory(config.Directory, config.ServersFile)
+			qm, err := termsql.LoadQueryMapDirectory(config)
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
 				return
@@ -196,7 +196,7 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 		Args:    cobra.ExactArgs(2),
 		Aliases: []string{"s"},
 		Run: func(cmd *cobra.Command, args []string) {
-			qm, err := termsql.LoadQueryMap(config)
+			qm, err := termsql.LoadQueryMapDirectory(config)
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
 				return
