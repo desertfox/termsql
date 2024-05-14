@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/charmbracelet/huh"
 	termsql "github.com/desertfox/termsql/pkg"
@@ -19,7 +17,10 @@ var (
 		Long:    `List all registered servers`,
 		Aliases: []string{"s"},
 		Run: func(cmd *cobra.Command, args []string) {
-			serverList, err := loadServerConfig()
+			serverList, err := termsql.LoadServerList(termsql.Config{
+				Directory:   termSQLDirectory,
+				ServersFile: termSQLServersFile,
+			})
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
 				return
@@ -44,21 +45,23 @@ var (
 		Aliases: []string{"e"},
 		Long:    `Explore a server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			serverList, err := loadServerConfig()
-			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
-				return
-			}
-
 			var (
 				serverOptions []huh.Option[string] = make([]huh.Option[string], 0)
 				serverGroup   string
 			)
 
+			serverList, err := termsql.LoadServerList(termsql.Config{
+				Directory:   termSQLDirectory,
+				ServersFile: termSQLServersFile,
+			})
+			if err != nil {
+				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
+				return
+			}
+
 			for server := range serverList {
 				serverOptions = append(serverOptions, huh.NewOption(server, server))
 			}
-
 			huh.NewSelect[string]().
 				Title("Select server group").
 				Options(serverOptions...).
@@ -107,15 +110,4 @@ func init() {
 	serversCmd.Flags().StringVarP(&tsqlGroup, "group", "g", "", "termsql group")
 
 	serversCmd.AddCommand(serverExplorerCmd)
-}
-
-func loadServerConfig() (termsql.ServerList, error) {
-	_, err := os.Stat(termSQLDirectory)
-	if err != nil && os.IsNotExist(err) {
-		return nil, fmt.Errorf("no directory found: %s", termSQLDirectory)
-	} else if err != nil {
-		return nil, err
-	}
-
-	return termsql.LoadServerList(filepath.Join(termSQLDirectory, termSQLServersFile))
 }

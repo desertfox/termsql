@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	termsql "github.com/desertfox/termsql/pkg"
+	"github.com/desertfox/termsql/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -35,4 +37,13 @@ func init() {
 
 func Execute() {
 	rootCmd.Execute()
+}
+
+func GetQueryMap() termsql.QueryMap {
+	qm, err := termsql.LoadQueryMapDirectory(termSQLDirectory, termSQLServersFile)
+	if err != nil {
+		fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
+		panic("")
+	}
+	return qm
 }

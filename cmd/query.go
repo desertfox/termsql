@@ -32,39 +32,34 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 				return
 			}
 
-			var group string
-			if len(args) == 0 {
-				options := make([]huh.Option[string], 0)
-				for item := range qm {
-					options = append(options, huh.NewOption(item, item))
-				}
+			var (
+				group string
+				query string
+			)
 
-				huh.NewSelect[string]().
-					Title("Pick sql group.").
-					Options(
-						options...,
-					).
-					Value(&group).Run()
-			} else {
-				group = args[0]
+			options := make([]huh.Option[string], 0)
+			for item := range qm {
+				options = append(options, huh.NewOption(item, item))
 			}
 
-			var query string
-			if len(args) < 1 {
-				options := make([]huh.Option[string], 0)
-				for _, q := range qm[group] {
-					options = append(options, huh.NewOption(q.Name, q.Name))
-				}
+			huh.NewSelect[string]().
+				Title("Pick sql group.").
+				Options(
+					options...,
+				).
+				Value(&group).Run()
 
-				huh.NewSelect[string]().
-					Title("Pick sql query.").
-					Options(
-						options...,
-					).
-					Value(&query).Run()
-			} else {
-				query = args[0]
+			options = make([]huh.Option[string], 0)
+			for _, q := range qm[group] {
+				options = append(options, huh.NewOption(q.Name, q.Name))
 			}
+
+			huh.NewSelect[string]().
+				Title("Pick sql query.").
+				Options(
+					options...,
+				).
+				Value(&query).Run()
 
 			q, err := qm.FindQuery(group, query)
 			if err != nil {
@@ -72,30 +67,16 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 				return
 			}
 
-			serverList, err := termsql.LoadServerList(filepath.Join(termSQLDirectory, termSQLServersFile))
+			results, err := termsql.RunQuery(termsql.Config{
+				Directory:   termSQLDirectory,
+				ServersFile: termSQLServersFile,
+			}, q)
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
 				return
 			}
 
-			s, err := serverList.FindServer(q.DatabaseGroup, q.DatabasePos)
-			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
-				return
-			}
-
-			db, err := termsql.Connect(s)
-			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
-				return
-			}
-			result, err := q.Run(db, params...)
-			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
-				return
-			}
-
-			fmt.Println(ui.BASE_STYLE.Render(ui.ToTable(result)))
+			fmt.Println(ui.BASE_STYLE.Render(ui.ToTable(results)))
 		},
 	}
 	queryCreateCmd = &cobra.Command{
@@ -104,7 +85,11 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 		Short:   "Create a query",
 		Long:    `Create a query`,
 		Run: func(cmd *cobra.Command, args []string) {
-			serverList, err := termsql.LoadServerList(filepath.Join(termSQLDirectory, termSQLServersFile))
+			config := termsql.Config{
+				Directory:   termSQLDirectory,
+				ServersFile: termSQLServersFile,
+			}
+			serverList, err := termsql.LoadServerList(config)
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
 				return
@@ -131,7 +116,7 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 				Options(optionsInt...).
 				Value(&q.DatabasePos).Run()
 
-			qm, err := termsql.LoadQueryMapDirectory(termSQLDirectory, "servers.yaml")
+			qm, err := termsql.LoadQueryMapDirectory(config.Directory, config.ServersFile)
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
 				return
@@ -194,37 +179,54 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 		Long:  `Run a raw query`,
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			serverList, err := termsql.LoadServerList(filepath.Join(termSQLDirectory, termSQLServersFile))
+			results, err := termsql.RunQuery(
+				termsql.Config{
+					Directory:   termSQLDirectory,
+					ServersFile: termSQLServersFile,
+				},
+				termsql.Query{
+					Query:         args[0],
+					DatabaseGroup: serverGroup,
+					DatabasePos:   serverPos,
+				},
+			)
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
 				return
 			}
 
-			s, err := serverList.FindServer(serverGroup, serverPos)
+			fmt.Println(ui.BASE_STYLE.Render(ui.ToTable(results)))
+		},
+	}
+	savedQueryCmd = &cobra.Command{
+		Use:     "saved",
+		Short:   "Run a saved query",
+		Long:    `Run a saved query`,
+		Args:    cobra.ExactArgs(2),
+		Aliases: []string{"s"},
+		Run: func(cmd *cobra.Command, args []string) {
+			qm := GetQueryMap()
+
+			q, err := qm.FindQuery(args[0], args[1])
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
 				return
 			}
 
-			db, err := termsql.Connect(s)
+			results, err := termsql.RunQuery(
+				termsql.Config{
+					Directory:   termSQLDirectory,
+					ServersFile: termSQLServersFile,
+				},
+				q,
+			)
 			if err != nil {
 				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
 				return
 			}
 
-			q := termsql.Query{
-				Query:         args[0],
-				DatabaseGroup: serverGroup,
-				DatabasePos:   serverPos,
-			}
+			fmt.Println(ui.BASE_STYLE.Render(ui.ToTable(results)))
 
-			result, err := q.Run(db, params...)
-			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
-				return
-			}
-
-			fmt.Println(ui.BASE_STYLE.Render(ui.ToTable(result)))
 		},
 	}
 )
@@ -233,8 +235,10 @@ func init() {
 	queryCmd.Flags().StringArrayVarP(&params, "params", "p", nil, "Query parameters")
 
 	rawQueryCmd.Flags().StringVar(&serverGroup, "server", "", "Server group")
-	rawQueryCmd.Flags().IntVar(&serverPos, "pos", 0, "Server position")
+	rawQueryCmd.MarkFlagRequired("server")
+	rawQueryCmd.Flags().IntVar(&serverPos, "pos", 0, "Server position, default 0")
 
 	queryCmd.AddCommand(queryCreateCmd)
 	queryCmd.AddCommand(rawQueryCmd)
+	queryCmd.AddCommand(savedQueryCmd)
 }

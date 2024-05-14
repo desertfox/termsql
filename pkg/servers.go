@@ -46,8 +46,15 @@ func DummyServer() Server {
 	}
 }
 
-func LoadServerList(p string) (ServerList, error) {
-	file, err := os.ReadFile(p)
+func LoadServerList(c Config) (ServerList, error) {
+	_, err := os.Stat(c.Directory)
+	if err != nil && os.IsNotExist(err) {
+		return ServerList{}, fmt.Errorf("no directory found: %s", c.Directory)
+	} else if err != nil {
+		return ServerList{}, err
+	}
+
+	file, err := os.ReadFile(c.BuildServerPath())
 	if err != nil {
 		return ServerList{}, err
 	}
@@ -65,12 +72,12 @@ func LoadServerList(p string) (ServerList, error) {
 	return serverList, nil
 }
 
-func (x ServerList) FindServer(searchGroup string, position int) (Server, error) {
-	if _, ok := x[searchGroup]; !ok {
-		return Server{}, fmt.Errorf("server group \"%s\" not found, groups:%v", searchGroup, x.Keys())
+func (x ServerList) FindServer(q Query) (Server, error) {
+	if _, ok := x[q.DatabaseGroup]; !ok {
+		return Server{}, fmt.Errorf("server group \"%s\" not found, groups:%v", q.DatabaseGroup, x.Keys())
 	}
 
-	return x[searchGroup].Servers[0], nil
+	return x[q.DatabaseGroup].Servers[0], nil
 }
 
 func (s Server) ToTable() string {
