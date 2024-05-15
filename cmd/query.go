@@ -1,15 +1,11 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-
-	"github.com/charmbracelet/huh"
+	"github.com/desertfox/termsql/cmd/forms"
+	"github.com/desertfox/termsql/cmd/output"
 	termsql "github.com/desertfox/termsql/pkg"
-	"github.com/desertfox/termsql/pkg/ui"
+
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -19,24 +15,26 @@ var (
 	queryCmd    = &cobra.Command{
 		Use:   "query",
 		Short: "query|q",
-		Long: `query|q
-
-Interactive mode: termsql query
-Saved query     : termsql query query_group query_name
-Raw query       : termsql q raw server_group server_pos "select * from table"`,
+		Long:  output.BannerWrap("\nQuery Interface for executing saved and raw queries"),
+		Example: `	Interactive mode
+		termsql query
+	Saved query
+		termsql query query_group query_name
+	Raw query
+		termsql query raw server_group server_pos "select * from table"`,
 		Aliases: []string{"q"},
 		Run: func(cmd *cobra.Command, args []string) {
 			qm, err := termsql.LoadQueryMapDirectory(config)
 			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
+				output.Error(err.Error())
 				return
 			}
 
-			fmt.Println(ui.BASE_STYLE.Render("Available queries:"))
+			output.Success("Available queries:")
 			for group, queries := range qm {
-				fmt.Println(ui.BASE_STYLE.Render("group: " + group))
+				output.Success("\nGroup: " + group + "\n")
 				for _, query := range queries {
-					fmt.Println(ui.BASE_STYLE.Render(ui.ToTwoLineString(query)))
+					output.Success(query.String() + "\n")
 				}
 			}
 		},
@@ -44,101 +42,52 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 	queryCreateCmd = &cobra.Command{
 		Use:     "create",
 		Aliases: []string{"c"},
-		Short:   "Create a query",
-		Long:    `Create a query`,
+		Short:   "create|c",
+		Long:    output.BannerWrap("\nCreate and save a new query"),
 		Run: func(cmd *cobra.Command, args []string) {
 			serverList, err := termsql.LoadServerList(config)
 			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
+				output.Error(err.Error())
 				return
 			}
 
-			serverOptions := make([]huh.Option[string], 0)
-			for server := range serverList {
-				serverOptions = append(serverOptions, huh.NewOption(server, server))
-			}
+			q := &termsql.Query{}
 
-			q := termsql.Query{}
-
-			huh.NewSelect[string]().
-				Title("Select server group").
-				Options(serverOptions...).
-				Value(&q.DatabaseGroup).Run()
-
-			optionsInt := make([]huh.Option[int], 0)
-			for pos, server := range serverList[q.DatabaseGroup].Servers {
-				optionsInt = append(optionsInt, huh.NewOption(server.Db, pos))
-			}
-
-			huh.NewSelect[int]().
-				Title("Select database").
-				Options(optionsInt...).
-				Value(&q.DatabasePos).Run()
+			forms.SelectSeverGroup(q, serverList)
 
 			qm, err := termsql.LoadQueryMapDirectory(config)
 			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
+				output.Error(err.Error())
 				return
 			}
 
-			groupOptions := make([]huh.Option[string], 0)
-			queryGroup := ""
-			for group := range qm {
-				groupOptions = append(groupOptions, huh.NewOption(group, group))
-			}
-			groupOptions = append(groupOptions, huh.NewOption("New group", "New group"))
-			huh.NewSelect[string]().
-				Title("Select query group").
-				Options(groupOptions...).
-				Value(&queryGroup).Run()
+			queryGroup := forms.SelectQueryGroup(qm)
 
-			if queryGroup == "New group" {
-				queryGroup = ""
-				huh.NewInput().
-					Title("Enter query group").
-					Value(&queryGroup).Run()
-			}
+			forms.UpdateQueryDetails(q)
 
-			huh.NewInput().
-				Title("Enter query alias").
-				Value(&q.Name).Run()
+			qm.AddQuery(queryGroup, *q)
 
-			huh.NewInput().
-				Title("Enter query").
-				Value(&q.Query).Run()
-
-			qs, _ := qm.FindQueryGroup(queryGroup)
-			qs = append(qs, q)
-
-			filePath := filepath.Join(termSQLDirectory, queryGroup+".yaml")
-			file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+			results, err := termsql.Run(config, *q)
 			if err != nil {
-				fmt.Println("Error opening file:", err)
-				return
-			}
-			defer file.Close()
-
-			data, err := yaml.Marshal(&qs)
-			if err != nil {
-				fmt.Println("Error marshaling to YAML:", err)
+				output.Error(err.Error())
 				return
 			}
 
-			if _, err := file.Write(data); err != nil {
-				fmt.Println("Error writing to file:", err)
-				return
-			}
+			output.Success(results)
 
-			fmt.Println("Query saved to", filePath)
+			termsql.WriteQueryMapToFile(config, qm)
+
+			output.Success("Query saved")
 		},
 	}
 	rawQueryCmd = &cobra.Command{
-		Use:   "raw",
-		Short: "Run a raw query",
-		Long:  `Run a raw query`,
-		Args:  cobra.ExactArgs(1),
+		Use:     "raw",
+		Short:   "raw|r",
+		Long:    output.BannerWrap("\nRun a raw query"),
+		Aliases: []string{"r"},
+		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			results, err := termsql.RunQuery(
+			results, err := termsql.Run(
 				config,
 				termsql.Query{
 					Query:         args[0],
@@ -147,129 +96,74 @@ Raw query       : termsql q raw server_group server_pos "select * from table"`,
 				},
 			)
 			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
+				output.Error(err.Error())
 				return
 			}
 
-			fmt.Println(ui.BASE_STYLE.Render(ui.ToTwoLineString(results)))
+			output.Success(results)
 		},
 	}
 	loadQueryCmd = &cobra.Command{
 		Use:     "load",
-		Short:   "Run a saved query",
-		Long:    `Run a saved query`,
-		Args:    cobra.ExactArgs(2),
+		Short:   "load|l",
+		Long:    output.BannerWrap("\nLoad and run a saved query"),
 		Aliases: []string{"l"},
 		Run: func(cmd *cobra.Command, args []string) {
 			qm, err := termsql.LoadQueryMapDirectory(config)
 			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
+				output.Error(err.Error())
 				return
+			}
+
+			if len(args) != 2 {
+				args = append(args, forms.SelectQueryGroup(qm))
+				args = append(args, forms.SelectQuery(qm, args[0]))
 			}
 
 			q, err := qm.FindQuery(args[0], args[1])
 			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
+				output.Error(err.Error())
 				return
 			}
 
-			results, err := termsql.RunQuery(config, q)
+			results, err := termsql.Run(config, q)
 			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
+				output.Error(err.Error())
 				return
 			}
 
-			fmt.Println(ui.BASE_STYLE.Render(ui.ToTwoLineString(results)))
+			output.Success(results)
 		},
 	}
 	saveQueryCmd = &cobra.Command{
 		Use:     "save",
 		Aliases: []string{"s"},
-		Short:   "Save a query",
-		Long:    `Save a query`,
+		Short:   "save|s",
+		Long:    output.BannerWrap("\nSave a query"),
 		Run: func(cmd *cobra.Command, args []string) {
 			serverList, err := termsql.LoadServerList(config)
 			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
+				output.Error(err.Error())
 				return
-			}
-
-			serverOptions := make([]huh.Option[string], 0)
-			for server := range serverList {
-				serverOptions = append(serverOptions, huh.NewOption(server, server))
 			}
 
 			q := termsql.Query{}
 
-			huh.NewSelect[string]().
-				Title("Select server group").
-				Options(serverOptions...).
-				Value(&q.DatabaseGroup).Run()
-
-			optionsInt := make([]huh.Option[int], 0)
-			for pos, server := range serverList[q.DatabaseGroup].Servers {
-				optionsInt = append(optionsInt, huh.NewOption(server.Db, pos))
-			}
-
-			huh.NewSelect[int]().
-				Title("Select database").
-				Options(optionsInt...).
-				Value(&q.DatabasePos).Run()
+			forms.SelectSeverGroup(&q, serverList)
 
 			qm, err := termsql.LoadQueryMapDirectory(config)
 			if err != nil {
-				fmt.Println(ui.ERROR_STYLE.Render(err.Error()))
+				output.Error(err.Error())
 				return
 			}
 
-			groupOptions := make([]huh.Option[string], 0)
-			queryGroup := ""
-			for group := range qm {
-				groupOptions = append(groupOptions, huh.NewOption(group, group))
-			}
-			groupOptions = append(groupOptions, huh.NewOption("New group", "New group"))
-			huh.NewSelect[string]().
-				Title("Select query group").
-				Options(groupOptions...).
-				Value(&queryGroup).Run()
+			queryGroup := forms.SelectQueryGroup(qm)
 
-			if queryGroup == "New group" {
-				queryGroup = ""
-				huh.NewInput().
-					Title("Enter query group").
-					Value(&queryGroup).Run()
-			}
+			forms.UpdateQueryDetails(&q)
 
-			huh.NewInput().
-				Title("Enter query alias").
-				Value(&q.Name).Run()
+			qm.AddQuery(queryGroup, q)
 
-			huh.NewInput().
-				Title("Enter query").
-				Value(&q.Query).Run()
-
-			qs, _ := qm.FindQueryGroup(queryGroup)
-			qs = append(qs, q)
-
-			filePath := filepath.Join(termSQLDirectory, queryGroup+".yaml")
-			file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-			if err != nil {
-				fmt.Println("Error opening file:", err)
-				return
-			}
-			defer file.Close()
-
-			data, err := yaml.Marshal(&qs)
-			if err != nil {
-				fmt.Println("Error marshaling to YAML:", err)
-				return
-			}
-			//write data to file
-			if _, err := file.Write(data); err != nil {
-				fmt.Println("Error writing to file:", err)
-				return
-			}
-
+			termsql.WriteQueryMapToFile(config, qm)
 		},
 	}
 )

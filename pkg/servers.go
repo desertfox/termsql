@@ -45,9 +45,9 @@ func DummyServer() Server {
 }
 
 func LoadServerList(c Config) (ServerList, error) {
-	_, err := os.Stat(c.Directory)
+	_, err := os.Stat(*c.Directory)
 	if err != nil && os.IsNotExist(err) {
-		return ServerList{}, fmt.Errorf("no directory found: %s", c.Directory)
+		return ServerList{}, fmt.Errorf("no directory found: %s", *c.Directory)
 	} else if err != nil {
 		return ServerList{}, err
 	}
@@ -84,4 +84,9 @@ func (x ServerList) Keys() []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func (x Server) String() string {
+	return fmt.Sprintf("Db:%s,Host:%s,Port:%d,User:%s,Pass:%s,ClientKey:%s,ClientCert:%s,CaFile:%s",
+		x.Db, x.Host, x.Port, x.User, "***", x.ClientKey, x.ClientCert, x.CaFile)
 }

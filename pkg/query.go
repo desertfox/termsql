@@ -20,15 +20,15 @@ type Query struct {
 }
 
 func LoadQueryMapDirectory(c Config) (QueryMap, error) {
-	files, err := os.ReadDir(c.Directory)
+	files, err := os.ReadDir(*c.Directory)
 	if err != nil {
-		return nil, fmt.Errorf("error reading directory: %s", c.Directory)
+		return nil, fmt.Errorf("error reading directory: %s", *c.Directory)
 	}
 
 	var QueryMaps QueryMap = make(QueryMap, 0)
 	for _, entry := range files {
-		if !entry.IsDir() && entry.Name() != c.ServersFile && filepath.Ext(entry.Name()) == ".yaml" {
-			filePath := filepath.Join(c.Directory, entry.Name())
+		if !entry.IsDir() && entry.Name() != *c.ServersFile && filepath.Ext(entry.Name()) == ".yaml" {
+			filePath := filepath.Join(*c.Directory, entry.Name())
 			data, err := os.ReadFile(filePath)
 			if err != nil {
 				fmt.Println("Error reading file:", filePath, err)
@@ -49,6 +49,31 @@ func LoadQueryMapDirectory(c Config) (QueryMap, error) {
 	}
 
 	return QueryMaps, nil
+}
+
+func WriteQueryMapToFile(c Config, qm QueryMap) error {
+	for group, queries := range qm {
+		if group == "" {
+			return fmt.Errorf("group cannot be empty")
+		}
+		filePath := filepath.Join(*c.Directory, group+".yaml")
+		file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		if err != nil {
+			return fmt.Errorf("error opening file: %s", err)
+		}
+		defer file.Close()
+
+		data, err := yaml.Marshal(&queries)
+		if err != nil {
+			return fmt.Errorf("error marshaling to YAML: %s", err)
+		}
+
+		if _, err := file.Write(data); err != nil {
+			return fmt.Errorf("error writing to file: %s", err)
+		}
+	}
+
+	return nil
 }
 
 func (x QueryMap) FindQuery(group, queryName string) (Query, error) {
@@ -77,6 +102,22 @@ func (x QueryMap) FindQueryGroup(group string) ([]Query, error) {
 	}
 
 	return x[group], nil
+}
+
+func (x QueryMap) Keys() []string {
+	keys := make([]string, 0, len(x))
+	for k := range x {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func (x QueryMap) AddQuery(group string, query Query) {
+	if _, ok := x[group]; !ok {
+		x[group] = []Query{}
+	}
+
+	x[group] = append(x[group], query)
 }
 
 func (x Query) Run(db *sql.DB, params ...string) (map[string]string, error) {
@@ -122,10 +163,6 @@ func (x Query) Run(db *sql.DB, params ...string) (map[string]string, error) {
 	return results, nil
 }
 
-func (x QueryMap) Keys() []string {
-	keys := make([]string, 0, len(x))
-	for k := range x {
-		keys = append(keys, k)
-	}
-	return keys
+func (x Query) String() string {
+	return fmt.Sprintf("Name:%s, DatabaseGroup:%s, DatabasePos:%d\nQuery:%s", x.Name, x.DatabaseGroup, x.DatabasePos, strings.Replace(x.Query, "\n", " ", -1))
 }

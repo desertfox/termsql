@@ -19,6 +19,8 @@ func TestLoadQueryMapDirectory(t *testing.T) {
 	}
 	defer os.RemoveAll(emptyDir)
 
+	invalidDir := "invalidDirectory"
+
 	testCases := []struct {
 		name           string
 		config         Config
@@ -28,14 +30,14 @@ func TestLoadQueryMapDirectory(t *testing.T) {
 		{
 			name: "Valid Directory",
 			config: Config{
-				Directory: validDir,
+				Directory: &validDir,
 			},
 			expectError: false,
 		},
 		{
 			name: "Invalid Directory",
 			config: Config{
-				Directory: "invalidDirectory",
+				Directory: &invalidDir,
 			},
 			expectError:    true,
 			expectedErrMsg: "error reading directory: invalidDirectory",
@@ -43,7 +45,7 @@ func TestLoadQueryMapDirectory(t *testing.T) {
 		{
 			name: "Empty Directory",
 			config: Config{
-				Directory: emptyDir,
+				Directory: &emptyDir,
 			},
 			expectError: false,
 		},
@@ -54,13 +56,13 @@ func TestLoadQueryMapDirectory(t *testing.T) {
 			_, err := LoadQueryMapDirectory(tc.config)
 			if tc.expectError {
 				if err == nil {
-					t.Errorf("Expected an error for directory '%s', got nil", tc.config.Directory)
+					t.Errorf("Expected an error for directory '%s', got nil", *tc.config.Directory)
 				} else if err.Error() != tc.expectedErrMsg {
 					t.Errorf("Expected error message to be '%s', got '%s'", tc.expectedErrMsg, err.Error())
 				}
 			} else {
 				if err != nil {
-					t.Fatalf("Expected no error for directory '%s', got %v", tc.config.Directory, err)
+					t.Fatalf("Expected no error for directory '%s', got %v", *tc.config.Directory, err)
 				}
 			}
 		})

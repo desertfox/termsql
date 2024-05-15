@@ -1,15 +1,25 @@
 package termsql
 
 import (
+	"fmt"
 	"path/filepath"
 )
 
+type Encoding int
+
+const (
+	JSON Encoding = iota
+	YAML
+	CSV
+)
+
 type Config struct {
-	Directory   string
-	ServersFile string
+	Directory      *string
+	ServersFile    *string
+	OutputEncoding *int
 }
 
-func RunQuery(c Config, q Query) (map[string]string, error) {
+func runQuery(c Config, q Query) (map[string]string, error) {
 	serverList, err := LoadServerList(c)
 	if err != nil {
 		return nil, err
@@ -28,7 +38,15 @@ func RunQuery(c Config, q Query) (map[string]string, error) {
 	return q.Run(db)
 }
 
+func Run(c Config, q Query) (string, error) {
+	results, err := runQuery(c, q)
+	if err != nil {
+		return "", fmt.Errorf("error running query: %w", err)
+	}
+	return EncodeStringMap(c, results)
+}
+
 func (x Config) BuildServerPath() string {
-	return filepath.Join(x.Directory, x.ServersFile)
+	return filepath.Join(*x.Directory, *x.ServersFile)
 
 }
