@@ -27,6 +27,10 @@ func Success(s string) {
 	fmt.Println(GOOD.Render(s))
 }
 
+func Normal(s string) {
+	fmt.Println(s)
+}
+
 func BannerWrap(s string) string {
 	return lipgloss.NewStyle().Padding(1).Foreground(lipgloss.Color("#00FF00")).Border(lipgloss.DoubleBorder()).Render(BANNER) + "\n" + s
 }

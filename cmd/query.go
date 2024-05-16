@@ -60,11 +60,9 @@ var (
 				return
 			}
 
-			queryGroup := forms.SelectQueryGroup(qm)
-
 			forms.UpdateQueryDetails(q)
 
-			qm.AddQuery(queryGroup, *q)
+			qm.AddQuery(forms.SelectQueryGroup(qm), *q)
 
 			results, err := termsql.Run(config, *q)
 			if err != nil {
@@ -156,11 +154,9 @@ var (
 				return
 			}
 
-			queryGroup := forms.SelectQueryGroup(qm)
-
 			forms.UpdateQueryDetails(&q)
 
-			qm.AddQuery(queryGroup, q)
+			qm.AddQuery(forms.SelectQueryGroup(qm), q)
 
 			termsql.WriteQueryMapToFile(config, qm)
 		},

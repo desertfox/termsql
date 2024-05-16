@@ -50,3 +50,12 @@ func (x Config) BuildServerPath() string {
 	return filepath.Join(*x.Directory, *x.ServersFile)
 
 }
+
+func PingServer(s Server) error {
+	db, err := Connect(s)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	return db.Ping()
+}
