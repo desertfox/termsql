@@ -24,8 +24,24 @@ var (
 			}
 		},
 	}
+	clearHistoryCmd = &cobra.Command{
+		Use:     "clear",
+		Aliases: []string{"c"},
+		Short:   "clear|c",
+		Long:    output.BannerWrap("\nClear run queries"),
+		Run: func(cmd *cobra.Command, args []string) {
+			h := termsql.History{}
+			if err := h.WriteHistory(config); err != nil {
+				output.Error(err.Error())
+				return
+			}
+
+			output.Success("History cleared")
+		},
+	}
 )
 
 func init() {
 	rootCmd.AddCommand(historyCmd)
+	historyCmd.AddCommand(clearHistoryCmd)
 }

@@ -49,6 +49,31 @@ func SelectQueryGroup(qm termsql.QueryMap) string {
 	return queryGroup
 }
 
+func SelectOrCreateQueryGroup(qm termsql.QueryMap) string {
+	var (
+		groupOptions []huh.Option[string] = make([]huh.Option[string], 0)
+		queryGroup   string
+	)
+
+	for group := range qm {
+		groupOptions = append(groupOptions, huh.NewOption(group, group))
+	}
+	groupOptions = append(groupOptions, huh.NewOption("Create new group", "Create new group"))
+
+	huh.NewSelect[string]().
+		Title("Select query group").
+		Options(groupOptions...).
+		Value(&queryGroup).Run()
+
+	if queryGroup == "Create new group" {
+		huh.NewInput().
+			Title("Enter new group name").
+			Value(&queryGroup).Run()
+	}
+
+	return queryGroup
+}
+
 func SelectQuery(qm termsql.QueryMap, queryGroup string) string {
 	var (
 		queryOptions []huh.Option[string] = make([]huh.Option[string], 0)

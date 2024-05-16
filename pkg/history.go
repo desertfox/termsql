@@ -42,7 +42,7 @@ func LoadHistory(c Config) (History, error) {
 	return history, nil
 }
 
-func (x History) writeHistory(c Config) error {
+func (x History) WriteHistory(c Config) error {
 	filePath := c.BuildHistoryPath()
 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
@@ -88,7 +88,7 @@ func UpdateHistory(c Config, q *Query) error {
 
 	h.Add(q)
 
-	err = h.writeHistory(c)
+	err = h.WriteHistory(c)
 	if err != nil {
 		return err
 	}

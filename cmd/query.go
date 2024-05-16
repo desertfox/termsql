@@ -67,7 +67,7 @@ var (
 
 			forms.UpdateQueryDetails(q)
 
-			qm.AddQuery(forms.SelectQueryGroup(qm), q)
+			qm.AddQuery(forms.SelectOrCreateQueryGroup(qm), q)
 
 			results, err := termsql.Run(config, q)
 			if err != nil {
