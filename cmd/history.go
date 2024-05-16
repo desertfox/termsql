@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+	"strconv"
+
 	"github.com/desertfox/termsql/cmd/output"
 	termsql "github.com/desertfox/termsql/pkg"
 	"github.com/spf13/cobra"
@@ -19,8 +22,25 @@ var (
 				return
 			}
 
-			for _, h := range history {
-				output.Success(h)
+			if len(args) > 0 {
+				index, _ := strconv.Atoi(args[0])
+				results, err := termsql.Run(config, history[index].Query)
+				if err != nil {
+					output.Error(err)
+					return
+				}
+
+				if err := termsql.UpdateHistory(config, history[index].Query); err != nil {
+					output.Error(err)
+					return
+				}
+
+				output.Success(results)
+				return
+			}
+
+			for i, h := range history {
+				output.Success(fmt.Sprintf("%d: %s", i, h))
 			}
 		},
 	}

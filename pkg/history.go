@@ -70,14 +70,10 @@ func (x QueryLog) String() string {
 }
 
 func (x *History) Add(q *Query) {
-	ql := append([]QueryLog{
-		{
-			Query: q,
-			RunAt: time.Now(),
-		},
-	}, *x...)
-
-	*x = ql
+	*x = append(*x, QueryLog{
+		Query: q,
+		RunAt: time.Now(),
+	})
 }
 
 func UpdateHistory(c Config, q *Query) error {
