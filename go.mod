@@ -1,6 +1,6 @@
 module github.com/desertfox/termsql
 
-go 1.21.5
+go 1.22.3
 
 require (
 	github.com/charmbracelet/huh v0.3.0

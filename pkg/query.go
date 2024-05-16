@@ -166,3 +166,13 @@ func (x Query) Run(db *sql.DB, params ...string) (map[string]string, error) {
 func (x Query) String() string {
 	return fmt.Sprintf("\tName:%s\n\tDatabaseGroup:%s\n\tDatabasePos:%d\n\tQuery:%s", x.Name, x.DatabaseGroup, x.DatabasePos, strings.Replace(x.Query, "\n", " ", -1))
 }
+
+func TablesQuery() *Query {
+	return &Query{
+		Query: "SHOW TABLES",
+	}
+}
+
+func TableQuery(s string) string {
+	return "SHOW COLUMNS FROM " + s
+}

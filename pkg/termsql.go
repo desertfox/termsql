@@ -19,7 +19,7 @@ type Config struct {
 	OutputEncoding *int
 }
 
-func runQuery(c Config, q Query) (map[string]string, error) {
+func RunQuery(c Config, q Query) (map[string]string, error) {
 	serverList, err := LoadServerList(c)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func runQuery(c Config, q Query) (map[string]string, error) {
 }
 
 func Run(c Config, q Query) (string, error) {
-	results, err := runQuery(c, q)
+	results, err := RunQuery(c, q)
 	if err != nil {
 		return "", fmt.Errorf("error running query: %w", err)
 	}
