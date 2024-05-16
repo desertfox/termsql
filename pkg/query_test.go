@@ -71,7 +71,7 @@ func TestLoadQueryMapDirectory(t *testing.T) {
 
 func TestFindQuery(t *testing.T) {
 	qm := QueryMap{
-		"testGroup": []Query{
+		"testGroup": []*Query{
 			{
 				Name:          "testQuery",
 				Query:         "SELECT * FROM test",
@@ -86,14 +86,14 @@ func TestFindQuery(t *testing.T) {
 		groupName      string
 		queryName      string
 		expectError    bool
-		expected       Query
+		expected       *Query
 		expectedErrMsg string
 	}{
 		{
 			name:      "Valid Query",
 			groupName: "testGroup",
 			queryName: "testQuery",
-			expected: Query{
+			expected: &Query{
 				Name:          "testQuery",
 				Query:         "SELECT * FROM test",
 				DatabaseGroup: "testServerGroup",
@@ -128,7 +128,7 @@ func TestFindQuery(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Expected no error for group '%s' and query '%s', got %v", tc.groupName, tc.queryName, err)
 			}
-			if query != tc.expected {
+			if *query != *tc.expected {
 				t.Errorf("Expected query to be '%v', got '%v'", tc.expected, query)
 			}
 		}

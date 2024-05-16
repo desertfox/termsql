@@ -70,7 +70,7 @@ func LoadServerList(c Config) (ServerList, error) {
 	return serverList, nil
 }
 
-func (x ServerList) FindServer(q Query) (Server, error) {
+func (x ServerList) FindServer(q *Query) (Server, error) {
 	if _, ok := x[q.DatabaseGroup]; !ok {
 		return Server{}, fmt.Errorf("server group \"%s\" not found, groups:%v", q.DatabaseGroup, x.Keys())
 	}
@@ -86,7 +86,15 @@ func (x ServerList) Keys() []string {
 	return keys
 }
 
-func (x Server) String() string {
-	return fmt.Sprintf("\tDb:%s,\n\tHost:%s,\n\tPort:%d,\n\tUser:%s,\n\tPass:%s,\n\tClientKey:%s,\n\tClientCert:%s,\n\tCaFile:%s",
-		x.Db, x.Host, x.Port, x.User, "***REDACTED***", x.ClientKey, x.ClientCert, x.CaFile)
+func (x Server) ToMap() map[string]string {
+	return map[string]string{
+		"db":          x.Db,
+		"host":        x.Host,
+		"port":        fmt.Sprintf("%d", x.Port),
+		"pass":        "***Redacted***",
+		"user":        x.User,
+		"client_key":  x.ClientKey,
+		"client_cert": x.ClientCert,
+		"ca_file":     x.CaFile,
+	}
 }

@@ -41,11 +41,23 @@ func encodeYAML(m map[string]string) (string, error) {
 func encodeCSV(m map[string]string) (string, error) {
 	var b strings.Builder
 	w := csv.NewWriter(&b)
-	for k, v := range m {
-		if err := w.Write([]string{k, v}); err != nil {
-			return "", fmt.Errorf("error encoding CSV: %w", err)
-		}
+
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
 	}
+	if err := w.Write(keys); err != nil {
+		return "", fmt.Errorf("error encoding CSV: %w", err)
+	}
+
+	values := make([]string, 0, len(m))
+	for _, v := range m {
+		values = append(values, v)
+	}
+	if err := w.Write(values); err != nil {
+		return "", fmt.Errorf("error encoding CSV: %w", err)
+	}
+
 	w.Flush()
 	if err := w.Error(); err != nil {
 		return "", fmt.Errorf("error encoding CSV: %w", err)

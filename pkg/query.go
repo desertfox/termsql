@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type QueryMap map[string][]Query
+type QueryMap map[string][]*Query
 
 type Query struct {
 	Name          string `yaml:"name"`
@@ -27,7 +27,11 @@ func LoadQueryMapDirectory(c Config) (QueryMap, error) {
 
 	var QueryMaps QueryMap = make(QueryMap, 0)
 	for _, entry := range files {
-		if !entry.IsDir() && entry.Name() != *c.ServersFile && filepath.Ext(entry.Name()) == ".yaml" {
+		if entry.IsDir() && filepath.Ext(entry.Name()) != ".yaml" {
+			continue
+		}
+
+		if entry.Name() != ServersFile && entry.Name() != HistoryFile {
 			filePath := filepath.Join(*c.Directory, entry.Name())
 			data, err := os.ReadFile(filePath)
 			if err != nil {
@@ -35,9 +39,8 @@ func LoadQueryMapDirectory(c Config) (QueryMap, error) {
 				continue
 			}
 
-			var q []Query
-			err = yaml.Unmarshal(data, &q)
-			if err != nil {
+			var q []*Query
+			if err := yaml.Unmarshal(data, &q); err != nil {
 				fmt.Println("Error unmarshalling YAML file:", filePath, err)
 				continue
 			}
@@ -76,10 +79,10 @@ func WriteQueryMapToFile(c Config, qm QueryMap) error {
 	return nil
 }
 
-func (x QueryMap) FindQuery(group, queryName string) (Query, error) {
+func (x QueryMap) FindQuery(group, queryName string) (*Query, error) {
 	queries, err := x.FindQueryGroup(group)
 	if err != nil {
-		return Query{}, err
+		return &Query{}, err
 	}
 
 	for _, query := range queries {
@@ -93,12 +96,12 @@ func (x QueryMap) FindQuery(group, queryName string) (Query, error) {
 		queryNames = append(queryNames, query.Name)
 	}
 
-	return Query{}, fmt.Errorf("query %s not found in group:%s, available queries:%v", queryName, group, queryNames)
+	return nil, fmt.Errorf("query %s not found in group:%s, available queries:%v", queryName, group, queryNames)
 }
 
-func (x QueryMap) FindQueryGroup(group string) ([]Query, error) {
+func (x QueryMap) FindQueryGroup(group string) ([]*Query, error) {
 	if _, ok := x[group]; !ok {
-		return []Query{}, fmt.Errorf("query group %s not found, groups:%v", group, x.Keys())
+		return nil, fmt.Errorf("query group %s not found, groups:%v", group, x.Keys())
 	}
 
 	return x[group], nil
@@ -112,9 +115,9 @@ func (x QueryMap) Keys() []string {
 	return keys
 }
 
-func (x QueryMap) AddQuery(group string, query Query) {
+func (x QueryMap) AddQuery(group string, query *Query) {
 	if _, ok := x[group]; !ok {
-		x[group] = []Query{}
+		x[group] = []*Query{}
 	}
 
 	x[group] = append(x[group], query)
@@ -163,8 +166,13 @@ func (x Query) Run(db *sql.DB, params ...string) (map[string]string, error) {
 	return results, nil
 }
 
-func (x Query) String() string {
-	return fmt.Sprintf("\tName:%s\n\tDatabaseGroup:%s\n\tDatabasePos:%d\n\tQuery:%s", x.Name, x.DatabaseGroup, x.DatabasePos, strings.Replace(x.Query, "\n", " ", -1))
+func (x Query) ToMap() map[string]string {
+	return map[string]string{
+		"name":           x.Name,
+		"database_group": x.DatabaseGroup,
+		"database_pos":   fmt.Sprintf("%d", x.DatabasePos),
+		"query":          x.Query,
+	}
 }
 
 func TablesQuery() *Query {

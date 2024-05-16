@@ -11,15 +11,16 @@ const (
 	JSON Encoding = iota
 	YAML
 	CSV
+	ServersFile string = "servers.yaml"
+	HistoryFile string = "history.yaml"
 )
 
 type Config struct {
 	Directory      *string
-	ServersFile    *string
 	OutputEncoding *int
 }
 
-func RunQuery(c Config, q Query) (map[string]string, error) {
+func RunQuery(c Config, q *Query) (map[string]string, error) {
 	serverList, err := LoadServerList(c)
 	if err != nil {
 		return nil, err
@@ -38,7 +39,7 @@ func RunQuery(c Config, q Query) (map[string]string, error) {
 	return q.Run(db)
 }
 
-func Run(c Config, q Query) (string, error) {
+func Run(c Config, q *Query) (string, error) {
 	results, err := RunQuery(c, q)
 	if err != nil {
 		return "", fmt.Errorf("error running query: %w", err)
@@ -47,7 +48,7 @@ func Run(c Config, q Query) (string, error) {
 }
 
 func (x Config) BuildServerPath() string {
-	return filepath.Join(*x.Directory, *x.ServersFile)
+	return filepath.Join(*x.Directory, ServersFile)
 
 }
 
@@ -58,4 +59,8 @@ func PingServer(s Server) error {
 	}
 	defer db.Close()
 	return db.Ping()
+}
+
+func (x Config) BuildHistoryPath() string {
+	return filepath.Join(*x.Directory, HistoryFile)
 }

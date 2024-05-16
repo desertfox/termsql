@@ -19,16 +19,20 @@ var (
    `
 )
 
-func Error(s string) {
-	fmt.Println(ERROR.Render(s))
+func Error(a any) {
+	fmt.Println(ERROR.Render(fmt.Sprintf("%s", a)))
 }
 
-func Success(s string) {
-	fmt.Println(GOOD.Render(s))
+func Success(a any) {
+	fmt.Println(GOOD.Render(fmt.Sprintf("%s", a)))
 }
 
-func Normal(s string) {
-	fmt.Println(s)
+func Normal(a any) {
+	fmt.Printf("%s\n", a)
+}
+
+func Heading(a any) {
+	fmt.Println(lipgloss.NewStyle().Bold(true).PaddingTop(1).PaddingBottom(1).Render(fmt.Sprintf("%s", a)))
 }
 
 func BannerWrap(s string) string {

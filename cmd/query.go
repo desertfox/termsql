@@ -26,14 +26,19 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			qm, err := termsql.LoadQueryMapDirectory(config)
 			if err != nil {
-				output.Error(err.Error())
+				output.Error(err)
 				return
 			}
 
 			for group, queries := range qm {
-				output.Success("Group:" + group)
+				output.Normal("Group: " + group)
 				for _, query := range queries {
-					output.Success(query.String())
+					s, err := termsql.EncodeStringMap(config, query.ToMap())
+					if err != nil {
+						output.Error(err)
+						return
+					}
+					output.Normal(s)
 				}
 			}
 		},
@@ -46,7 +51,7 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			serverList, err := termsql.LoadServerList(config)
 			if err != nil {
-				output.Error(err.Error())
+				output.Error(err)
 				return
 			}
 
@@ -56,23 +61,31 @@ var (
 
 			qm, err := termsql.LoadQueryMapDirectory(config)
 			if err != nil {
-				output.Error(err.Error())
+				output.Error(err)
 				return
 			}
 
 			forms.UpdateQueryDetails(q)
 
-			qm.AddQuery(forms.SelectQueryGroup(qm), *q)
+			qm.AddQuery(forms.SelectQueryGroup(qm), q)
 
-			results, err := termsql.Run(config, *q)
+			results, err := termsql.Run(config, q)
 			if err != nil {
-				output.Error(err.Error())
+				output.Error(err)
 				return
 			}
 
 			output.Success(results)
 
-			termsql.WriteQueryMapToFile(config, qm)
+			if err := termsql.WriteQueryMapToFile(config, qm); err != nil {
+				output.Error(err)
+				return
+			}
+
+			if err := termsql.UpdateHistory(config, q); err != nil {
+				output.Error(err)
+				return
+			}
 
 			output.Success("Query saved")
 		},
@@ -84,16 +97,20 @@ var (
 		Aliases: []string{"r"},
 		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			results, err := termsql.Run(
-				config,
-				termsql.Query{
-					Query:         args[0],
-					DatabaseGroup: serverGroup,
-					DatabasePos:   serverPos,
-				},
-			)
+			q := &termsql.Query{
+				Query:         args[0],
+				DatabaseGroup: serverGroup,
+				DatabasePos:   serverPos,
+			}
+
+			results, err := termsql.Run(config, q)
 			if err != nil {
-				output.Error(err.Error())
+				output.Error(err)
+				return
+			}
+
+			if err := termsql.UpdateHistory(config, q); err != nil {
+				output.Error(err)
 				return
 			}
 
@@ -108,7 +125,7 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			qm, err := termsql.LoadQueryMapDirectory(config)
 			if err != nil {
-				output.Error(err.Error())
+				output.Error(err)
 				return
 			}
 
@@ -119,13 +136,18 @@ var (
 
 			q, err := qm.FindQuery(args[0], args[1])
 			if err != nil {
-				output.Error(err.Error())
+				output.Error(err)
 				return
 			}
 
 			results, err := termsql.Run(config, q)
 			if err != nil {
-				output.Error(err.Error())
+				output.Error(err)
+				return
+			}
+
+			if err := termsql.UpdateHistory(config, q); err != nil {
+				output.Error(err)
 				return
 			}
 
@@ -140,21 +162,21 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			serverList, err := termsql.LoadServerList(config)
 			if err != nil {
-				output.Error(err.Error())
+				output.Error(err)
 				return
 			}
 
-			q := termsql.Query{}
+			q := &termsql.Query{}
 
-			forms.SelectSeverGroup(&q, serverList)
+			forms.SelectSeverGroup(q, serverList)
 
 			qm, err := termsql.LoadQueryMapDirectory(config)
 			if err != nil {
-				output.Error(err.Error())
+				output.Error(err)
 				return
 			}
 
-			forms.UpdateQueryDetails(&q)
+			forms.UpdateQueryDetails(q)
 
 			qm.AddQuery(forms.SelectQueryGroup(qm), q)
 

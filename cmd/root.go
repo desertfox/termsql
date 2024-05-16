@@ -11,11 +11,10 @@ import (
 )
 
 var (
-	termSQLDirectory   string
-	termSQLServersFile string
-	termSQLEncoding    int
-	config             termsql.Config
-	rootCmd            = &cobra.Command{
+	termSQLDirectory string
+	termSQLEncoding  int
+	config           termsql.Config
+	rootCmd          = &cobra.Command{
 		Use:   "termsql",
 		Short: "termsql is a command line tool for interacting with SQL Server",
 		Long:  output.BannerWrap("\nTermsql is a command line tool for interacting with SQL Server"),
@@ -30,8 +29,7 @@ func init() {
 	}
 	defaultDirectory := filepath.Join(home, ".termsql")
 
-	rootCmd.PersistentFlags().StringVarP(&termSQLDirectory, "directory-config", "d", defaultDirectory, "Directory where termsql files are stored")
-	rootCmd.PersistentFlags().StringVarP(&termSQLServersFile, "server-config", "s", "servers.yaml", "termsql servers")
+	rootCmd.PersistentFlags().StringVarP(&termSQLDirectory, "dir", "d", defaultDirectory, "Directory where termsql files are stored")
 	rootCmd.PersistentFlags().IntVarP(&termSQLEncoding, "encoding", "e", 0, "Output encoding (0: JSON, 1: YAML, 2: CSV)")
 
 	rootCmd.AddCommand(serversCmd)
@@ -39,7 +37,6 @@ func init() {
 
 	config = termsql.Config{
 		Directory:      &termSQLDirectory,
-		ServersFile:    &termSQLServersFile,
 		OutputEncoding: &termSQLEncoding,
 	}
 }

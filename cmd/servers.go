@@ -28,17 +28,22 @@ var (
 				}
 
 				for i, s := range serverList[group].Servers {
-					output.Success(fmt.Sprintf("Group:%s,Position:%d", group, i))
-					output.Success(s.String())
+					output.Heading(fmt.Sprintf("Group:%s Position:%d", group, i))
+					str, err := termsql.EncodeStringMap(config, s.ToMap())
+					if err != nil {
+						output.Error(err)
+						return
+					}
+					output.Normal(str)
 				}
 			}
 		},
 	}
 	serversValidateConfigCmd = &cobra.Command{
-		Use:     "validate-config",
-		Short:   "validate-config|vc",
-		Long:    output.BannerWrap("\nValidate the server configuration file"),
-		Aliases: []string{"vc"},
+		Use:     "validate",
+		Short:   "validate|v",
+		Long:    output.BannerWrap("\nValidate the server connections"),
+		Aliases: []string{"v"},
 		Run: func(cmd *cobra.Command, args []string) {
 			serverList, err := termsql.LoadServerList(config)
 			if err != nil {
@@ -50,14 +55,20 @@ var (
 
 			for group := range serverList {
 				for i, s := range serverList[group].Servers {
+					str, err := termsql.EncodeStringMap(config, s.ToMap())
+					if err != nil {
+						output.Error(err)
+						return
+					}
+
 					if err := termsql.PingServer(s); err != nil {
 						output.Error(fmt.Sprintf("Group:%s,Position:%d", group, i))
-						output.Error(s.String())
-						output.Error(err.Error())
+						output.Error(str)
+
 						continue
 					}
 					output.Success(fmt.Sprintf("Group:%s,Position:%d", group, i))
-					output.Success(s.String())
+					output.Success(str)
 				}
 			}
 
