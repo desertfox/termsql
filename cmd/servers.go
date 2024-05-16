@@ -28,7 +28,8 @@ var (
 				}
 
 				for i, s := range serverList[group].Servers {
-					output.Success(fmt.Sprintf("Group %s,Position:%d\n%s", group, i, s))
+					output.Success(fmt.Sprintf("Group:%s,Position:%d", group, i))
+					output.Success(s.String())
 				}
 			}
 		},

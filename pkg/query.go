@@ -164,5 +164,5 @@ func (x Query) Run(db *sql.DB, params ...string) (map[string]string, error) {
 }
 
 func (x Query) String() string {
-	return fmt.Sprintf("Name:%s, DatabaseGroup:%s, DatabasePos:%d\nQuery:%s", x.Name, x.DatabaseGroup, x.DatabasePos, strings.Replace(x.Query, "\n", " ", -1))
+	return fmt.Sprintf("\tName:%s\n\tDatabaseGroup:%s\n\tDatabasePos:%d\n\tQuery:%s", x.Name, x.DatabaseGroup, x.DatabasePos, strings.Replace(x.Query, "\n", " ", -1))
 }

@@ -16,7 +16,7 @@ var (
 		Use:   "query",
 		Short: "query|q",
 		Long:  output.BannerWrap("\nQuery Interface for executing saved and raw queries"),
-		Example: `	Interactive mode
+		Example: `	List saved queries
 		termsql query
 	Saved query
 		termsql query query_group query_name
@@ -30,11 +30,10 @@ var (
 				return
 			}
 
-			output.Success("Available queries:")
 			for group, queries := range qm {
-				output.Success("\nGroup: " + group + "\n")
+				output.Success("Group:" + group)
 				for _, query := range queries {
-					output.Success(query.String() + "\n")
+					output.Success(query.String())
 				}
 			}
 		},

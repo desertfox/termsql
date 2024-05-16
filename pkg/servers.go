@@ -87,6 +87,6 @@ func (x ServerList) Keys() []string {
 }
 
 func (x Server) String() string {
-	return fmt.Sprintf("Db:%s,Host:%s,Port:%d,User:%s,Pass:%s,ClientKey:%s,ClientCert:%s,CaFile:%s",
-		x.Db, x.Host, x.Port, x.User, "***", x.ClientKey, x.ClientCert, x.CaFile)
+	return fmt.Sprintf("\tDb:%s,\n\tHost:%s,\n\tPort:%d,\n\tUser:%s,\n\tPass:%s,\n\tClientKey:%s,\n\tClientCert:%s,\n\tCaFile:%s",
+		x.Db, x.Host, x.Port, x.User, "***REDACTED***", x.ClientKey, x.ClientCert, x.CaFile)
 }
