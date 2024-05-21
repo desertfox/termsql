@@ -15,7 +15,7 @@ var (
 	queryCmd    = &cobra.Command{
 		Use:   "query",
 		Short: "query|q",
-		Long:  output.BannerWrap("\nQuery Interface for executing saved and raw queries"),
+		Long:  output.BannerWrap("Query Interface for executing saved and raw queries"),
 		Example: `	List saved queries
 		termsql query
 	Saved query
@@ -31,7 +31,7 @@ var (
 			}
 
 			for group, queries := range qm {
-				output.Normal("Group: " + group)
+				output.Heading("Group: " + group)
 				for _, query := range queries {
 					s, err := termsql.EncodeStringMap(config, query.ToMap())
 					if err != nil {
@@ -47,7 +47,7 @@ var (
 		Use:     "create",
 		Aliases: []string{"c"},
 		Short:   "create|c",
-		Long:    output.BannerWrap("\nCreate and save a new query"),
+		Long:    output.BannerWrap("Create and save a new query"),
 		Run: func(cmd *cobra.Command, args []string) {
 			serverList, err := termsql.LoadServerList(config)
 			if err != nil {
@@ -93,7 +93,7 @@ var (
 	rawQueryCmd = &cobra.Command{
 		Use:     "raw",
 		Short:   "raw|r",
-		Long:    output.BannerWrap("\nRun a raw query"),
+		Long:    output.BannerWrap("Run a raw query"),
 		Aliases: []string{"r"},
 		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -120,7 +120,7 @@ var (
 	loadQueryCmd = &cobra.Command{
 		Use:     "load",
 		Short:   "load|l",
-		Long:    output.BannerWrap("\nLoad and run a saved query"),
+		Long:    output.BannerWrap("Load and run a saved query"),
 		Aliases: []string{"l"},
 		Run: func(cmd *cobra.Command, args []string) {
 			qm, err := termsql.LoadQueryMapDirectory(config)
@@ -158,7 +158,7 @@ var (
 		Use:     "save",
 		Aliases: []string{"s"},
 		Short:   "save|s",
-		Long:    output.BannerWrap("\nSave a query"),
+		Long:    output.BannerWrap("Save a query"),
 		Run: func(cmd *cobra.Command, args []string) {
 			serverList, err := termsql.LoadServerList(config)
 			if err != nil {

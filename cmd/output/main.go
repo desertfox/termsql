@@ -32,9 +32,9 @@ func Normal(a any) {
 }
 
 func Heading(a any) {
-	fmt.Println(lipgloss.NewStyle().Bold(true).PaddingTop(1).PaddingBottom(1).Render(fmt.Sprintf("%s", a)))
+	fmt.Println(lipgloss.NewStyle().Bold(true).Render(fmt.Sprintf("%s", a)))
 }
 
 func BannerWrap(s string) string {
-	return lipgloss.NewStyle().Padding(1).Foreground(lipgloss.Color("#00FF00")).Border(lipgloss.DoubleBorder()).Render(BANNER) + "\n" + s
+	return "\n" + lipgloss.NewStyle().Padding(1).Foreground(lipgloss.Color("#00FF00")).Border(lipgloss.DoubleBorder()).Render(BANNER) + "\n" + s
 }

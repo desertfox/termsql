@@ -101,3 +101,18 @@ func UpdateQueryDetails(q *termsql.Query) {
 		Title("Enter query").
 		Value(&q.Query).Run()
 }
+
+func SelectStringForm(title string, strings []string) string {
+	var selectOptions []huh.Option[string] = make([]huh.Option[string], 0, len(strings))
+	for _, s := range strings {
+		selectOptions = append(selectOptions, huh.NewOption(s, s))
+	}
+
+	var selected string
+	huh.NewSelect[string]().
+		Title(title).
+		Options(selectOptions...).
+		Value(&selected).Run()
+
+	return selected
+}

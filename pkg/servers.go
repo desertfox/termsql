@@ -2,7 +2,6 @@ package termsql
 
 import (
 	"fmt"
-	"os"
 
 	"gopkg.in/yaml.v2"
 )
@@ -44,38 +43,20 @@ func DummyServer() Server {
 	}
 }
 
-func LoadServerList(c Config) (ServerList, error) {
-	_, err := os.Stat(*c.Directory)
-	if err != nil && os.IsNotExist(err) {
-		return ServerList{}, fmt.Errorf("no directory found: %s", *c.Directory)
-	} else if err != nil {
-		return ServerList{}, err
-	}
-
-	file, err := os.ReadFile(c.BuildServerPath())
-	if err != nil {
-		return ServerList{}, err
-	}
-
-	var serverList ServerList
-	err = yaml.Unmarshal(file, &serverList)
-	if err != nil {
-		return ServerList{}, err
-	}
-
-	if len(serverList) == 0 {
-		return ServerList{}, NoServersFoundError{}
-	}
-
-	return serverList, nil
-}
-
 func (x ServerList) FindServer(q *Query) (Server, error) {
 	if _, ok := x[q.DatabaseGroup]; !ok {
 		return Server{}, fmt.Errorf("server group \"%s\" not found, groups:%v", q.DatabaseGroup, x.Keys())
 	}
 
 	return x[q.DatabaseGroup].Servers[0], nil
+}
+
+func (x ServerList) FindServerGroup(group string) (Servers, error) {
+	if _, ok := x[group]; !ok {
+		return Servers{}, fmt.Errorf("server group %s not found, groups:%v", group, x.Keys())
+	}
+
+	return x[group], nil
 }
 
 func (x ServerList) Keys() []string {

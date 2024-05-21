@@ -14,7 +14,7 @@ var (
 		Use:     "history",
 		Aliases: []string{"h"},
 		Short:   "history|h",
-		Long:    output.BannerWrap("\nList run queries"),
+		Long:    output.BannerWrap("List run queries"),
 		Run: func(cmd *cobra.Command, args []string) {
 			history, err := termsql.LoadHistory(config)
 			if err != nil {
@@ -40,7 +40,7 @@ var (
 			}
 
 			for i, h := range history {
-				output.Success(fmt.Sprintf("%d: %s", i, h))
+				output.Normal(fmt.Sprintf("%d: %s", i, h))
 			}
 		},
 	}
@@ -48,7 +48,7 @@ var (
 		Use:     "clear",
 		Aliases: []string{"c"},
 		Short:   "clear|c",
-		Long:    output.BannerWrap("\nClear run queries"),
+		Long:    output.BannerWrap("Clear run queries"),
 		Run: func(cmd *cobra.Command, args []string) {
 			h := termsql.History{}
 			if err := h.WriteHistory(config); err != nil {

@@ -13,7 +13,7 @@ var (
 	serversCmd = &cobra.Command{
 		Use:     "servers",
 		Short:   "servers|s",
-		Long:    output.BannerWrap("\nList all registered servers"),
+		Long:    output.BannerWrap("List all registered servers"),
 		Aliases: []string{"s"},
 		Run: func(cmd *cobra.Command, args []string) {
 			serverList, err := termsql.LoadServerList(config)
@@ -42,7 +42,7 @@ var (
 	serversValidateConfigCmd = &cobra.Command{
 		Use:     "validate",
 		Short:   "validate|v",
-		Long:    output.BannerWrap("\nValidate the server connections"),
+		Long:    output.BannerWrap("Validate the server connections"),
 		Aliases: []string{"v"},
 		Run: func(cmd *cobra.Command, args []string) {
 			serverList, err := termsql.LoadServerList(config)
@@ -51,8 +51,18 @@ var (
 				return
 			}
 
-			output.Normal("Checking server configuration files")
+			if tsqlGroup != "" {
+				servers, err := serverList.FindServerGroup(tsqlGroup)
+				if err != nil {
+					output.Error(err)
+					return
+				}
 
+				serverList = termsql.ServerList{tsqlGroup: servers}
+
+			}
+
+			output.Heading("Checking server configuration files")
 			for group := range serverList {
 				for i, s := range serverList[group].Servers {
 					str, err := termsql.EncodeStringMap(config, s.ToMap())
@@ -61,18 +71,26 @@ var (
 						return
 					}
 
-					if err := termsql.PingServer(s); err != nil {
-						output.Error(fmt.Sprintf("Group:%s,Position:%d", group, i))
+					db, err := termsql.MySQLConnect(s)
+					if err != nil {
+						output.Error(fmt.Sprintf("Group:%s,Position:%d, %s", group, i, err))
 						output.Error(str)
-
 						continue
 					}
+					defer db.Close()
+
+					if err := termsql.PingDB(db); err != nil {
+						output.Error(fmt.Sprintf("Group:%s,Position:%d,error:%s", group, i, err))
+						output.Error(str)
+						continue
+					}
+
 					output.Success(fmt.Sprintf("Group:%s,Position:%d", group, i))
 					output.Success(str)
 				}
 			}
 
-			output.Normal("Finished")
+			output.Heading("Finished")
 		},
 	}
 )
@@ -80,4 +98,5 @@ var (
 func init() {
 	serversCmd.Flags().StringVarP(&tsqlGroup, "group", "g", "", "termsql group")
 	serversCmd.AddCommand(serversValidateConfigCmd)
+	serversValidateConfigCmd.Flags().StringVarP(&tsqlGroup, "group", "g", "", "termsql group")
 }
