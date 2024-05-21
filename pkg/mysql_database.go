@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 
@@ -29,10 +30,6 @@ func MySQLConnect(s Server) (*sql.DB, error) {
 		TLSConfig:            "skip-verify",
 	}
 
-	if DEBUG {
-		fmt.Println(config.FormatDSN())
-	}
-
 	if s.CaFile != "" && s.ClientCert != "" && s.ClientKey != "" {
 		config.TLSConfig = "custom"
 		rootCertPool := x509.NewCertPool()
@@ -50,11 +47,17 @@ func MySQLConnect(s Server) (*sql.DB, error) {
 		}
 		clientCert = append(clientCert, certs)
 		mysql.RegisterTLSConfig("custom", &tls.Config{
-			RootCAs:      rootCertPool,
-			Certificates: clientCert,
-			MinVersion:   tls.VersionTLS12,
-			MaxVersion:   tls.VersionTLS12,
+			RootCAs:               rootCertPool,
+			Certificates:          clientCert,
+			MinVersion:            tls.VersionTLS12,
+			MaxVersion:            tls.VersionTLS12,
+			InsecureSkipVerify:    true,
+			VerifyPeerCertificate: verifyPeerCertFunc(rootCertPool),
 		})
+	}
+
+	if DEBUG {
+		fmt.Println(config.FormatDSN())
 	}
 
 	db, err := sql.Open("mysql", config.FormatDSN())
@@ -105,4 +108,23 @@ func RunQueryDynamic(db *sql.DB, q *Query, params ...string) (map[string]string,
 	}
 
 	return results, nil
+}
+
+func verifyPeerCertFunc(pool *x509.CertPool) func([][]byte, [][]*x509.Certificate) error {
+	return func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
+		if len(rawCerts) == 0 {
+			return errors.New("no certificates available to verify")
+		}
+
+		cert, err := x509.ParseCertificate(rawCerts[0])
+		if err != nil {
+			return err
+		}
+
+		opts := x509.VerifyOptions{Roots: pool}
+		if _, err = cert.Verify(opts); err != nil {
+			return err
+		}
+		return nil
+	}
 }
