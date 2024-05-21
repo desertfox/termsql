@@ -49,8 +49,8 @@ func MySQLConnect(s Server) (*sql.DB, error) {
 		mysql.RegisterTLSConfig("custom", &tls.Config{
 			RootCAs:               rootCertPool,
 			Certificates:          clientCert,
-			MinVersion:            tls.VersionTLS12,
-			MaxVersion:            tls.VersionTLS12,
+			MinVersion:            tls.VersionTLS10,
+			MaxVersion:            tls.VersionTLS13,
 			InsecureSkipVerify:    true,
 			VerifyPeerCertificate: verifyPeerCertFunc(rootCertPool),
 		})
