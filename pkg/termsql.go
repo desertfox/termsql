@@ -19,6 +19,10 @@ const (
 	HistoryFile string = "history.yaml"
 )
 
+var (
+	DEBUG bool = os.Getenv("DEBUG_TERMSQL") != ""
+)
+
 func Run(c Config, q *Query) (string, error) {
 	results, err := RunQuery(c, q)
 	if err != nil {

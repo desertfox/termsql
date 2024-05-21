@@ -15,8 +15,26 @@ type Pinger interface {
 }
 
 func MySQLConnect(s Server) (*sql.DB, error) {
-	var tslString string
+	if s.Port == 0 {
+		s.Port = 3306
+	}
+
+	config := mysql.Config{
+		User:                 s.User,
+		Passwd:               s.Pass,
+		Net:                  "tcp",
+		Addr:                 fmt.Sprintf("%s:%d", s.Host, s.Port),
+		DBName:               s.Db,
+		AllowNativePasswords: true,
+		TLSConfig:            "skip-verify",
+	}
+
+	if DEBUG {
+		fmt.Println(config.FormatDSN())
+	}
+
 	if s.CaFile != "" && s.ClientCert != "" && s.ClientKey != "" {
+		config.TLSConfig = "custom"
 		rootCertPool := x509.NewCertPool()
 		pem, err := os.ReadFile(s.CaFile)
 		if err != nil {
@@ -34,15 +52,12 @@ func MySQLConnect(s Server) (*sql.DB, error) {
 		mysql.RegisterTLSConfig("custom", &tls.Config{
 			RootCAs:      rootCertPool,
 			Certificates: clientCert,
+			MinVersion:   tls.VersionTLS12,
+			MaxVersion:   tls.VersionTLS12,
 		})
-		tslString = "?tls=custom"
 	}
 
-	if s.Port == 0 {
-		s.Port = 3306
-	}
-
-	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s%s", s.User, s.Pass, s.Host, s.Port, s.Db, tslString))
+	db, err := sql.Open("mysql", config.FormatDSN())
 	if err != nil {
 		return nil, err
 	}
