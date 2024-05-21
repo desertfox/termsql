@@ -38,6 +38,10 @@ func MySQLConnect(s Server) (*sql.DB, error) {
 		tslString = "?tls=custom"
 	}
 
+	if s.Port == 0 {
+		s.Port = 3306
+	}
+
 	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s%s", s.User, s.Pass, s.Host, s.Port, s.Db, tslString))
 	if err != nil {
 		return nil, err
